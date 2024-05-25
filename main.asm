@@ -1,52 +1,67 @@
 #importonce
 BasicUpstart2(Init)
 
-* = $0840 "Sprites"
-.import binary "assets/sprites.bin"
+//Include Definitions
+* = * "Definitions"
+#import "def/vic.asm"
+#import "def/sprites.asm"
+
+//Include macros
+* = * "Macros"
+#import "macros/vic.asm"
+#import "macros/sprites.asm"
+
 
 
 * = * "Init"
 Init:{
-		lda #0
-		sta $d020
+//.break
+	:VIC_SetScreenColors(0,11,0)
+	:VIC_ClearScreenSpace(VIC.SCREEN_RAM)
 
-		lda #6
-		sta $d021
+	jsr Ball.Init
 
-		lda #32
-		ldx #0
-	loop:
-		sta $0400 + 000,x
-		sta $0400 + 250,x
-		sta $0400 + 500,x
-		sta $0400 + 750,x
-		inx
-		cpx #250
-		bne loop
+	jmp MainLoop
+}
 
-		lda #34
-		sta $07f8
+// 1er sprite en $0840
+//* = $0840 "Sprites"
 
-		lda #72
-		sta $d000
 
-		lda $d010
-		ora #%00000001
-		sta $d010
+//Include Libraries
+* = * "Ball lib"
+#import "libs/Ball.asm"
 
-		lda #234
-		sta $d001
+* = * "MainLoop"
+MainLoop:{
+	Wait:{
+/*
+		//Une petite boucle pour ralentir...
+			ldx #0
+		loopSlow:
+			nop
+			nop
+			nop
+			nop
+			nop
+			nop
+			nop
+			nop
+			inx
+			bne loopSlow
+*/
+		VIC_WaitRasterLine(251)
+	}
 
-		lda #1
-		sta $d027
+	:VIC_IncBorderColor()
+	jsr Ball.Animer
+	:VIC_DecBorderColor()
 
-		lda $d015
-		ora #%00000001
-		sta $d015
-
-		rts
-
+	jmp MainLoop
 
 }
 
 
+* = (ceil(* / 64)*64) "Sprites 2"
+.label SPR_IDX = * / 64
+.import binary "assets/sprites.bin"
