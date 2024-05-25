@@ -1,171 +1,124 @@
+#importonce
+
 BasicUpstart2(Init)
 
+// Import des macros
 #import "./macros/vic.asm"
 #import "./macros/sprites.asm"
 
-* = $0840 "Sprites" // $0840 = d 2112 = 64 * 33
+
+//Import des globales
+#import "./def/globales.asm"
+
+
+//Import des Sprites
+* = $0840 "Sprites" // $0840 = d 2112 = 64 * 33 >> 33 = balle / 34 = raquette
 .import binary "./assets/sprites.bin"
 
+
+//Import des librairies
+* = * "Fonctions"
+#import "./libs/Fonctions.asm"
 * = * "Ball"
 #import "./libs/Ball.asm"
-
 * = * "Header"
 #import "./libs/Header.asm"
+* = * "Game"
+#import "./libs/Game.asm"
+* = * "Menu"
+#import "./libs/Menu.asm"
 
+
+//GAME
 * = * "Init"
 Init:
 
-	:SetBorderColor(14) // Bleu clair
-	:SetBackgroundColor(6) // Bleu foncé
+	jsr GAME.RootInit
 
-	//Vider l'écran...
-	:FillScreen(32)  // 32 = caractère "espace"
+//Debug >> on va directement au GS3
+/*
+	ldx #3
+	stx GAMESTATUS
+	ldx #2
+	stx NBPLAYERS
+*/
+MainLoop:{
+		jsr FN.GetRandom
+//Wait for raster >> bas d'écran affiché
+		ldx #0
+		stx $d020		
+		:WaitRasterLine(251)
+		ldx #5
+		stx $d020
 
-	//Init Ball
-	jsr BALL.Init
-
-	lda #2 // vitesse X = 2
-	ldx #0 // vers la droite
-	jsr BALL.SetX
-
-	lda #1 // vitesse Y = 1
-	ldx #0 // vers la droite
-	jsr BALL.SetY
-
-	//Init Header
-	jsr HEADER.Init
-
-
-
-* = * "MainLoop"
-loop:
-	inc VIC.BORDER_COLOR
-
-	jsr BALL.Move
-	// X avant Y...
-	cmp #0 // Sup ou Inf à 255 ???
-	bne xSup255
-xInf255:
-	cpx #BALL.MinX // marge gauche = 24
-	bcs xOK
-	bcc invertX
-xSup255:
-	cpx #BALL.MaxX // Marge gauche = 24 + ecran = 320 - ball = 8 (-256 XMSB) => 320+24-(256+8) = 80
-	bcc xOK
-invertX:
-	lda BALL.DirectionX
-	eor #%00000001
-	sta BALL.DirectionX
-
-	jsr HEADER.AddRebond
-
-xOK:
+		lda GAMESTATUS
+	isGS1:	// 1 = Menu Init
+		cmp #1
+		bne !+
+		jsr MENU.Init
+		jmp MainLoop
 
 
+	!:
+	isGS2: // 2 = Menu Loop
+		cmp #2
+		bne !+
+		jsr MENU.MenuLoop
+		jmp MainLoop
+	!:
 
-	//Bordures ... Haut = 50, bas = 250 ... la balle fait 8 pixels...
-	clc
-	cpy #BALL.MinY
-	bcc invertY
-	clc
-	cpy #BALL.MaxY
-	bcc yOK
-invertY:
-	lda BALL.DirectionY
-	eor #%00000001
-	sta BALL.DirectionY
+	isGS3: // 3 = Init Game
+		cmp #3
+		bne !+
+		jsr GAME.Init		
+		jmp MainLoop
 
-	jsr HEADER.AddRebond
+	!:
+	isGS4: // 4 : Game wait for launch ball
+		cmp #4
+		bne !+
+		jsr GAME.WaitLaunch
+		jmp MainLoop
 
-yOK:
-	//Ralentir...
-	ldx #0
+	!:
+	isGS5: //  5 = Looooop Game 
+		cmp #5
+		bne !+
+		jsr GAME.Running
+		jmp MainLoop
 
+	!:
+	isGS6: //  6 = Player 1 Mark point
+		cmp #6
+		bne !+
+		lda #12
+		sta $d021	
+		jmp MainLoop
 
-// Add compteur mouvement...
-	jsr HEADER.AddMouvement
+	!:
+	isGS7: //  7 = Player 2 (or CPU) Mark point
+		cmp #7
+		bne !+
+		lda #13
+		sta $d021	
+		jmp MainLoop
 
-// Afficher Vitesse X et Y
-	jsr HEADER.DisplaySpeed
+//  
 
-// Modifier la vitesse avec le joystick !
-	ldx VIC.JOY2
-	// %111frldu
-testUp:
-	txa
-	and #%00000001
-	bne testDown
+	!:
+	isGS8: //  8 = Game End (player 1 or 2 win)
+		cmp #8
+		bne !+
+		lda #14
+		sta $d021	
+		jmp MainLoop
+//  
 
-	lda BALL.SpeedY
-	cmp #8
-	beq testDown
+//  other >> Reset to 1
+	!:
+		lda #1
+		sta GAMESTATUS
 
-	inc BALL.SpeedY
+		jmp MainLoop
+}
 
-
-testDown:
-	txa
-	and #%00000010
-	bne testLeft
-
-	lda BALL.SpeedY
-	cmp #1
-	beq testLeft
-
-	dec BALL.SpeedY
-
-
-testLeft:
-	txa
-	and #%00000100
-	bne testRight
-
-	lda BALL.SpeedX
-	cmp #1
-	beq testRight
-
-	dec BALL.SpeedX
-
-
-testRight:
-	txa
-	and #%00001000
-	bne testFire
-
-	lda BALL.SpeedX
-	cmp #8
-	beq testFire
-
-	inc BALL.SpeedX
-
-
-
-testFire:
-	// Fire = Pause
-	txa
-	and #%00010000
-	bne noJoy
-
-	// fire pressed...
-	// on revérifie le joystick...
-	ldx VIC.JOY2
-	jmp testFire
-
-
-
-noJoy:
-dec VIC.BORDER_COLOR
-
-wait:
-	lda VIC.RASTER
-	cmp #251
-	beq l250
-
-	jmp wait
-
-
-
-l250:
-
-
-	jmp loop

@@ -1,11 +1,18 @@
 #importonce
 
+#import "../main.asm"
+
+
 SPRITES:{
 
 	.label INDEX0 = $07f8
 
 	.label X0 = $d000
 	.label Y0 = $d001
+	.label X1 = $d002
+	.label Y1 = $d003
+	.label X2 = $d004
+	.label Y2 = $d005
 	.label COLOR0 = $d027
 	.label COLOR1 = $d025
 	.label COLOR2 = $d026

@@ -1,5 +1,8 @@
 #importonce
 
+#import "../main.asm"
+
+
 HEADER:{
 
 	TexteHeader:
@@ -96,6 +99,87 @@ HEADER:{
 			clc
 			adc #$B0
 			sta VIC.SCREEN_RAM + 34
+
+			rts
+	}
+
+	DisplayScore:{
+		scoreJ1:{
+				lda SCORE1
+				cmp #10
+				bcc inf10
+				cmp #20
+				bcc inf20
+
+			equal20:
+				lda #48+128 // zéro inversé
+				sta VIC.SCREEN_RAM+10
+				lda #50+128 // 2 inversé
+				sta VIC.SCREEN_RAM+9
+				jmp scoreJ1ok
+
+
+			inf10:
+				clc
+				adc #48+128 // on ajoute 0 inversé
+				sta VIC.SCREEN_RAM+10
+				lda #48+128
+				sta VIC.SCREEN_RAM+9
+				jmp scoreJ1ok
+
+			inf20:
+				clc
+				adc #48+128-10 // on ajoute 0 inversé et on retranche 10
+				sta VIC.SCREEN_RAM+10
+				lda #49+128
+				sta VIC.SCREEN_RAM+9
+				//jmp scoreJ1ok
+
+			scoreJ1ok:
+
+		}
+
+		scoreJ2:{
+				lda SCORE2
+				cmp #10
+				bcc inf10
+				cmp #20
+				bcc inf20
+
+			equal20:
+				lda #48+128 // zéro inversé
+				sta VIC.SCREEN_RAM+30
+				lda #50+128 // 2 inversé
+				sta VIC.SCREEN_RAM+29
+				jmp scoreJ2ok
+
+
+			inf10:
+				clc
+				adc #48+128 // on ajoute 0 inversé
+				sta VIC.SCREEN_RAM+30
+				lda #48+128
+				sta VIC.SCREEN_RAM+29
+				jmp scoreJ2ok
+
+			inf20:
+				clc
+				adc #48+128-10 // on ajoute 0 inversé et on retranche 10
+				sta VIC.SCREEN_RAM+30
+				lda #49+128
+				sta VIC.SCREEN_RAM+29
+				//jmp scoreJ2ok
+
+			scoreJ2ok:
+
+		}
+
+		niveau:{
+				lda NIVEAU
+				clc
+				adc #48+128
+				sta VIC.SCREEN_RAM+23
+		}
 
 			rts
 	}
