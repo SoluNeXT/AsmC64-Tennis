@@ -501,6 +501,139 @@ GAME:{
 			rts			
 	}
 
+	P1Mark:{
+			clc
+			inc SCORE1
+			lda SCORE1
+			cmp GAGNANT
+			beq p1win
 
+			lda #1
+			sta LAUNCHER
+			jsr SetInitialBallPosition
 
+			lda NBPLAYERS
+			cmp #1
+			beq vsCPU
+
+			lda #1
+			jmp next
+
+		vsCPU:
+			lda #TIMEBEFORELAUNCH
+
+		next:
+			sta CPU_WAITLAUNCH
+
+			lda #4
+			sta GAMESTATUS
+
+			jmp HEADER.DisplayScore
+
+		p1win:
+			lda #8
+			sta GAMESTATUS
+			lda #0
+			sta LAUNCHER
+			sta MENUANIM
+			jmp HEADER.DisplayScore
+	}
+
+	P2Mark:{
+			clc
+			inc SCORE2
+			lda SCORE2
+			cmp GAGNANT
+			beq p2win
+
+			lda #0
+			sta LAUNCHER
+			jsr SetInitialBallPosition
+
+			lda #1
+			sta CPU_WAITLAUNCH
+
+			lda #4
+			sta GAMESTATUS
+
+			jmp HEADER.DisplayScore
+
+		p2win:
+			lda #8
+			sta GAMESTATUS
+			lda #0
+			sta LAUNCHER
+			sta MENUANIM
+			jmp HEADER.DisplayScore
+	}
+
+	GameWin:{
+			ldx MENUANIM
+			inx
+			cpx #colorFadeLoopLength
+			bne !+
+			ldx #0
+		!:
+			stx MENUANIM
+			lda colorFadeLoop,x
+			tay
+
+			lda LAUNCHER
+			cmp #0 //P1 launcher donc P2 win
+			beq p2win
+
+		p1win:
+			ldx #0
+		!:
+			lda textWin,x
+			sta VIC.SCREEN_RAM + 40*11 + 6,x
+			lda textP1win,x
+			sta VIC.SCREEN_RAM + 40*10 + 6,x
+			tya
+			sta VIC.COLOR_RAM + 40*10 + 6,x
+			sta VIC.COLOR_RAM + 40*11 + 6,x
+			inx
+			cpx #8
+			bne !-
+			jmp waitForClick
+
+		p2win:
+			ldx #0
+		!:
+			lda textWin,x
+			sta VIC.SCREEN_RAM + 40*11 + 26,x
+			lda NBPLAYERS
+			cmp #2
+			beq vsP2
+		vsCPU:
+			lda textCPUwin,x
+			jmp next
+
+		vsP2:	
+			lda textP2win,x
+
+		next:
+			sta VIC.SCREEN_RAM + 40*10 + 26,x
+
+			tya
+			sta VIC.COLOR_RAM + 40*10 + 26,x
+			sta VIC.COLOR_RAM + 40*11 + 26,x
+			inx
+			cpx #8
+			bne !-
+
+		waitForClick:
+			lda VIC.JOY1
+			and VIC.JOY2
+			and #VIC.JOY_FIRE
+			bne exit
+
+		click:
+			lda #99
+			sta GAMESTATUS
+
+		exit:
+			rts
+
+	}
 }

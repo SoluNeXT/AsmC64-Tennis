@@ -91,16 +91,14 @@ MainLoop:{
 	isGS6: //  6 = Player 1 Mark point
 		cmp #6
 		bne !+
-		lda #12
-		sta $d021	
+		jsr GAME.P1Mark
 		jmp MainLoop
 
 	!:
 	isGS7: //  7 = Player 2 (or CPU) Mark point
 		cmp #7
 		bne !+
-		lda #13
-		sta $d021	
+		jsr GAME.P2Mark	
 		jmp MainLoop
 
 //  
@@ -109,12 +107,11 @@ MainLoop:{
 	isGS8: //  8 = Game End (player 1 or 2 win)
 		cmp #8
 		bne !+
-		lda #14
-		sta $d021	
+		jsr GAME.GameWin
 		jmp MainLoop
 //  
 
-//  other >> Reset to 1
+//  other (99) >> Reset to 1
 	!:
 		lda #1
 		sta GAMESTATUS
