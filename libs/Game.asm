@@ -149,6 +149,9 @@ GAME:{
 			and #1
 			sta DIRECTIONY
 
+			lda NbPingChangementVitesse
+			sta NBPING
+
 			rts
 	}
 
@@ -304,7 +307,7 @@ GAME:{
 
 		goUp:
 			lda SPRITES.Y2
-			sec
+			clc
 			sbc NIVEAU
 			cmp #MinY-1
 			bcs !+
@@ -318,9 +321,9 @@ GAME:{
 			sec
 			adc NIVEAU
 
-			cmp #MaxY+TailleBalle-HauteurRaquette
+			cmp #MaxY-HauteurRaquette
 			bcc !+
-			lda #MaxY+TailleBalle-HauteurRaquette
+			lda #MaxY-HauteurRaquette
 		!:
 			sta SPRITES.Y2
 			rts
@@ -419,43 +422,24 @@ GAME:{
 			ldy DIRECTIONX
 
 			cpy #0 // positif donc vers joueur 2
-			beq testRaquetteJ2
+			bne testRaquetteJ1
+			jmp testRaquetteJ2
 
-		testRaquetteJ1:
-			//ici, Y = 1 ...
-			cmp #0 // est-ce que X > 255 ?
-			beq oui
-		non:
+
+
+
+		J1RateBalle:
+			lda #7
+			sta GAMESTATUS
 			rts
-		oui:
-			//On va tester si la balle a dépassé la raquette...
-			cpx #J1PosX -1
-			bcc J1RateBalle
 
-			cpx #J1PosX + EpaisseurRaquette
-			bcs non
-		zone2contactJ1:
-			//On va vérifier Y ici...
-			lda TEMP1 //On récupère Y
-			//On compare avec la position de la raquette
-			cmp SPRITES.Y1 //Joueur 1
-			bcc audessus
-			sec
-			sbc #HauteurRaquette
-			cmp SPRITES.Y1
-			bcs endessous
-			//Ici on touche la raquette
-			//donc on inverse la direction de la balle
-			lda DIRECTIONX
-			eor #1
-			sta DIRECTIONX
+		J2RateBalle:
+			lda #6
+			sta GAMESTATUS
+			rts		
 
 
-		audessus:
-		endessous:
-
-
-		testRaquetteJ2:
+	testRaquetteJ2:
 			cmp #0 // est-ce que X > 255 ?
 			bne oui2
 		non2:
@@ -467,38 +451,152 @@ GAME:{
 
 			cpx #J2PosX - TailleBalle + 1
 			bcc non2
-		zone2contactJ2:
-			//On va vérifier Y ici...
-			lda TEMP1 //On récupère Y
-			//On compare avec la position de la raquette
-			cmp SPRITES.Y2 //Joueur 2
-			bcc audessus2
+
+			ldy SPRITES.Y2
+			jmp zone2contact
+
+
+
+		testRaquetteJ1:
+			//ici, Y = 1 ...
+			cmp #0 // est-ce que X > 255 ?
+			beq oui
+		non:
+		outOfRaquette:
+			rts
+		oui:
+			//On va tester si la balle a dépassé la raquette...
+			cpx #J1PosX -1
+			bcc J1RateBalle
+
+			cpx #J1PosX + EpaisseurRaquette
+			bcs non
+
+			ldy SPRITES.Y1
+			//jmp zone2contact
+
+		zone2contact:
+			lda NIVEAU
+			clc
+			adc #2
+			sta MaxYSpeed
+			adc #1
+			sta MaxYSpeedPlus1
+
+			tya
 			sec
-			sbc #HauteurRaquette
-			cmp SPRITES.Y2
-			bcs endessous2
-			//Ici on touche la raquette
+			sbc #ContactBallPixel
+			cmp TEMP1
+			bcs outOfRaquette	
+
+			// 2 - 6 - 16 - 6 - 2
+
+			clc
+			adc #2
+			cmp TEMP1
+			bcs testInvertY
+
+			clc
+			adc #6
+			cmp TEMP1
+			bcs sub1aY
+
+			clc
+			adc #16
+			cmp TEMP1
+			bcs invertX
+
+			clc
+			adc #6
+			cmp TEMP1
+			bcs add1aY
+
+			clc
+			adc #2
+			cmp TEMP1
+			bcc outOfRaquette
+
+			lda DIRECTIONY
+			cmp #0
+			beq invertX
+			bne invertY
+
+		testInvertY:
+			lda DIRECTIONY
+			cmp #1
+			beq invertX
+
+		invertY:
+			eor #1
+			sta DIRECTIONY
+			jmp invertX
+
+		sub1aY:
+			ldy SPEEDY
+			lda DIRECTIONY
+			cmp #0
+			beq descend
+		monte:
+			iny
+		limitSpeedY:
+			cpy MaxYSpeedPlus1: #6
+			bcc okY
+			ldy MaxYSpeed: #5
+		okY:
+		 	sty SPEEDY
+		 	jmp invertX
+
+		 descend:
+		 	dey
+		 	bpl okY
+		 invertYsign:
+		 	tya
+		 	eor #%11111111
+		 	clc
+		 	adc #%00000001
+		 	tay
+		 	lda DIRECTIONY
+		 	eor #1
+		 	sta DIRECTIONY
+		 	jmp limitSpeedY
+
+
+		add1aY:
+			ldy SPEEDY
+			lda DIRECTIONY
+			cmp #0
+			bne descend
+			beq monte
+
+
+		invertX:
 			//donc on inverse la direction de la balle
 			lda DIRECTIONX
 			eor #1
 			sta DIRECTIONX
 
 
-		audessus2:
-		endessous2:
+			dec NBPING
+			lda NBPING
+			cmp #0
+			bne nochange
 
+			ldx SPEEDX
+			lda NbPingChangementVitesse,x
+			sta NBPING
 
+			cpx #7
+			beq nochange
+
+			inx
+			stx SPEEDX
+
+		nochange:
 			rts
 
-		J1RateBalle:
-			lda #7
-			sta GAMESTATUS
-			rts
 
-		J2RateBalle:
-			lda #6
-			sta GAMESTATUS
-			rts			
+	
+	
 	}
 
 	P1Mark:{

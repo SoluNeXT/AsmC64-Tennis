@@ -33,7 +33,7 @@
 .label LAUNCHER = $12 // 0 = joueur 1 // 1 = joueur 2
 .label CPU_WAITLAUNCH = $13 //Temps d'attente avant que le CPU n'envoi la balle
 .label FIRSTBALLWAIT = $14 //Temps d'attente avant que l'un des joueur puisse envoyer la balle au début du jeu
-.label NBPING = $16 // Nombre de rebonds restants avant de passer au niveau supérieur
+.label NBPING = $16 // Nombre de rebonds restants avant d'augmenter la vitesse de la balle
 
 .label MinX = 24
 .label MinY = 60
@@ -49,8 +49,11 @@
 .label SCREEN_WIDTH = VIC.SCREEN_WIDTH
 .label J1PosX = MARGIN_LEFT + EspacementBordureRaquette
 .label J2PosX = MARGIN_LEFT + SCREEN_WIDTH - (EspacementBordureRaquette + TailleBalle)
-.label NbPingChangementNiveau = 50
+//.label NbPingChangementNiveau = 50
 
+NbPingChangementVitesse:
+	.byte 10, 15, 25, 40, 60, 85, 115
+// speed   1   2   3   4   5   6    7
 colorFadeLoop:
 	.byte $01, $07, $03, $05, $04, $02, $06, $00, $00, $06, $02, $04, $05, $03, $07, $01, $01, $01
 colorFadeLoopEnd:
