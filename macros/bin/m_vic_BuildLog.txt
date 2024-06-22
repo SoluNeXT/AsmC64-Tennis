@@ -1,0 +1,19 @@
+Output dir: F:\C64Project\youtube\DetectionCollisions\macros\bin
+parsing
+Got 5 errors and 0 warnings while executing:
+  (F:\C64Project\youtube\DetectionCollisions\macros\m_vic.asm 26:8) Error: Unknown symbol 'VIC'
+  (F:\C64Project\youtube\DetectionCollisions\macros\m_vic.asm 29:8) Error: Unknown symbol 'VIC'
+  (F:\C64Project\youtube\DetectionCollisions\macros\m_vic.asm 42:8) Error: Unknown symbol 'VIC'
+  (F:\C64Project\youtube\DetectionCollisions\macros\m_vic.asm 45:8) Error: Unknown symbol 'VIC'
+  (F:\C64Project\youtube\DetectionCollisions\macros\m_vic.asm 56:8) Error: Unknown symbol 'VIC'
+
+   pha
+   lda #rasterLine
+  !:
+   ldx VIC.RASTER_MSB
+       ^
+
+Error: Unknown symbol 'VIC'
+at line 26, column 8 in m_vic.asm
+
+
